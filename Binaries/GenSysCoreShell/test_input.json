@@ -1,0 +1,18 @@
+{
+	"ValueNoiseOctaves": 5,
+	"BlurPixelRadius": 1,
+	"Granularity": 0.5,
+	"RiverGenerationIterations": 1,
+	"RiverResolution": 0.99,
+	"RiverThickness": 4,
+	"RiverAllowNodeMismatch": true,
+	"RiversOnGivenFeatures": false,
+	"RiverStrengthFactor": 0.7,
+	"MinUnitFoliageHeight": 0,
+	"NumberOfTerrainLayers": 4,
+	"NumberOfFoliageLayers": 4,
+	"FoliageWholeness": 0.3,
+	"User_TerrainOutlineMap": "",
+	"User_TerrainFeatureMap": "",
+	"User_RiverOutline": ""
+}
