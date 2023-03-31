@@ -18,10 +18,12 @@ public:
 	
 	/** This function will be bound to Command (by default it will bring up plugin window) */
 	void PluginButtonClicked();
+	FReply RunGensys();
 	
 private:
 
 	void RegisterMenus();
+
 
 	void CallRunGensysFromProject();
 	void CallRunGensysFromEngine();

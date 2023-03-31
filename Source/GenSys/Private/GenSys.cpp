@@ -92,17 +92,39 @@ TSharedRef<SDockTab> FGenSysModule::OnSpawnPluginTab(const FSpawnTabArgs& SpawnT
 		ARGUMENT_FIELD_NUMERIC(UserParams, NumberOfFoliageLayers, "integer 1-4")
 		ARGUMENT_FIELD_NUMERIC(UserParams, FoliageWholeness, "float 0-1")
 		ARGUMENT_FIELD_NUMERIC(UserParams, MinUnitFoliageHeight, "float 0-1")
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(FMargin(0, 30))
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.VAlign(VAlign_Top)
+			.HAlign(HAlign_Center)
+			[
+				SNew(SButton)
+				.OnClicked_Raw(this, &FGenSysModule::RunGensys)
+				[
+					SNew(STextBlock)
+					.Text(FText::FromString("Generate!"))
+				]
+			]
+			+ SHorizontalBox::Slot()
+		]
 	];
 }
 
 void FGenSysModule::PluginButtonClicked()
 {
 	FGlobalTabmanager::Get()->TryInvokeTab(GenSysTabName);
+}
 
+FReply FGenSysModule::RunGensys()
+{
 	ExportParamsIntoJson();
-
 	CallRunGensysFromEngine();
 	CallRunGensysFromProject();
+
+	return FReply::Handled();
 }
 
 void FGenSysModule::RegisterMenus()
