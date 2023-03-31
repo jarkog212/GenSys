@@ -19,7 +19,7 @@
 	out.paramName = TCHAR_TO_ANSI(*NewText.ToString());\
 }
 
-#define ARGUMENT_FIELD_NUMERIC(paramStruct ,paramName, hint)\
+#define ARGUMENT_FIELD_NUMERIC(paramStruct , title, paramName, hint)\
 + SVerticalBox::Slot()\
 .AutoHeight()\
 .Padding(FMargin(30,5))\
@@ -29,7 +29,7 @@
 	.VAlign(VAlign_Top)\
 	[\
 		SNew(STextBlock)\
-		.Text(FText::FromString(#paramName))\
+		.Text(FText::FromString(#title))\
 	]\
 	+ SHorizontalBox::Slot()\
 	.VAlign(VAlign_Top)\
@@ -40,7 +40,7 @@
 	]\
 ]
 
-#define ARGUMENT_FIELD_STRING(paramStruct, paramName, hint)\
+#define ARGUMENT_FIELD_STRING(paramStruct, title, paramName, hint)\
 + SVerticalBox::Slot()\
 .AutoHeight()\
 .Padding(FMargin(30,5))\
@@ -50,7 +50,7 @@
 	.VAlign(VAlign_Top)\
 	[\
 		SNew(STextBlock)\
-		.Text(FText::FromString(#paramName))\
+		.Text(FText::FromString(#title))\
 	]\
 	+ SHorizontalBox::Slot()\
 	.VAlign(VAlign_Top)\
@@ -61,7 +61,7 @@
 	]\
 ]
 
-#define ARGUMENT_CHECKBOX(paramStruct, paramName)\
+#define ARGUMENT_CHECKBOX(paramStruct, title, paramName)\
 + SVerticalBox::Slot()\
 .AutoHeight()\
 .Padding(FMargin(30,5))\
