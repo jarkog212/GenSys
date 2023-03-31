@@ -8,6 +8,7 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "ToolMenus.h"
+#include "SDefaultParamList.h"
 #include "Interfaces/IPluginManager.h"
 #include "Windows/WindowsSystemIncludes.h"
 #include "DataTypes.h"
@@ -63,33 +64,34 @@ void FGenSysModule::ShutdownModule()
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(GenSysTabName);
 }
 
+extern GensysParameters UserParams;
 TSharedRef<SDockTab> FGenSysModule::OnSpawnPluginTab(const FSpawnTabArgs& SpawnTabArgs)
 {
 	return SNew(SDockTab)
 	.TabRole(ETabRole::NomadTab)
 	[
-		SNew(SVerticalBox).RenderTransform(FSlateRenderTransform(7.0f))
+		SNew(SVerticalBox).RenderTransform(FSlateRenderTransform(0.95f))
 		SECTION_TITLE(Noise)
-		ARGUMENT_FIELD(ValueNoiseOctaves, "integer 0-5")
-		ARGUMENT_FIELD(BlurPixelRadius, "integer 0-5")
-		ARGUMENT_FIELD(Granularity, "float 0-1")
+		ARGUMENT_FIELD_NUMERIC(UserParams, ValueNoiseOctaves, "integer 0-5")
+		ARGUMENT_FIELD_NUMERIC(UserParams, BlurPixelRadius, "integer 0-5")
+		ARGUMENT_FIELD_NUMERIC(UserParams, Granularity, "float 0-1")
 		SECTION_TITLE(Terrain)
-		ARGUMENT_FIELD(User_TerrainOutlineMap, "string full path (512x512)")
-		ARGUMENT_FIELD(User_TerrainFeatureMap, "string full path (512x512)")
+		ARGUMENT_FIELD_STRING(UserParams, User_TerrainOutlineMap, "string full path (512x512)")
+		ARGUMENT_FIELD_STRING(UserParams, User_TerrainFeatureMap, "string full path (512x512)")
 		SECTION_TITLE(River / Erosion)
-		ARGUMENT_FIELD(RiverGenerationIterations, "--unused--")
-		ARGUMENT_FIELD(RiverResolution, "float 0-1 (technically 0.90 - 1)")
-		ARGUMENT_FIELD(RiverThickness, "integer 0-inf")
-		ARGUMENT_FIELD(RiverStrengthFactor, "float 0-1")
-		ARGUMENT_CHECKBOX(RiverAllowNodeMismatch)
-		ARGUMENT_CHECKBOX(RiversOnGivenFeatures)
-		ARGUMENT_FIELD(User_RiverOutline, "string full path (512x512)")
+		ARGUMENT_FIELD_NUMERIC(UserParams, RiverGenerationIterations, "--unused--")
+		ARGUMENT_FIELD_NUMERIC(UserParams, RiverResolution, "float 0-1 (technically 0.90 - 1)")
+		ARGUMENT_FIELD_NUMERIC(UserParams, RiverThickness, "integer 0-inf")
+		ARGUMENT_FIELD_NUMERIC(UserParams, RiverStrengthFactor, "float 0-1")
+		ARGUMENT_CHECKBOX(UserParams, RiverAllowNodeMismatch)
+		ARGUMENT_CHECKBOX(UserParams, RiversOnGivenFeatures)
+		ARGUMENT_FIELD_STRING(UserParams, User_RiverOutline, "string full path (512x512)")
 		SECTION_TITLE(Layers)
-		ARGUMENT_FIELD(NumberOfTerrainLayers, "integer 1-4")
+		ARGUMENT_FIELD_NUMERIC(UserParams, NumberOfTerrainLayers, "integer 1-4")
 		SECTION_TITLE(Foliage)
-		ARGUMENT_FIELD(NumberOfFoliageLayers, "integer 1-4")
-		ARGUMENT_FIELD(FoliageWholeness, "float 0-1")
-		ARGUMENT_FIELD(MinUnitFoliageHeight, "float 0-1")
+		ARGUMENT_FIELD_NUMERIC(UserParams, NumberOfFoliageLayers, "integer 1-4")
+		ARGUMENT_FIELD_NUMERIC(UserParams, FoliageWholeness, "float 0-1")
+		ARGUMENT_FIELD_NUMERIC(UserParams, MinUnitFoliageHeight, "float 0-1")
 	];
 }
 
@@ -161,7 +163,6 @@ void FGenSysModule::CallRunGensysFromEngine()
 #define PARSE_TO_JSON(input, dest, value) \
 	dest.emplace(#value, input.value);
 
-extern GensysParameters UserParams;
 void FGenSysModule::ExportParamsIntoJson(const FString& path)
 {
 	json FileOut;

@@ -1,6 +1,25 @@
 #pragma once
+#include "Styling/SlateTypes.h"
 
-#define ARGUMENT_FIELD(paramName, hint)\
+#define KEY_CHANGE_HANDLER_NUMERIC(out, paramName)\
+[](const FText& NewText, ETextCommit::Type InTextCommit)\
+{\
+	out.paramName = FCString::Atof(*NewText.ToString());\
+}
+
+#define KEY_CHANGE_HANDLER_BOOL(out, paramName)\
+[](ECheckBoxState InState)\
+{\
+	out.paramName = InState == ECheckBoxState::Checked;\
+}
+
+#define KEY_CHANGE_HANDLER_STRING(out, paramName)\
+[](const FText& NewText, ETextCommit::Type InTextCommit)\
+{\
+	out.paramName = TCHAR_TO_ANSI(*NewText.ToString());\
+}
+
+#define ARGUMENT_FIELD_NUMERIC(paramStruct ,paramName, hint)\
 + SVerticalBox::Slot()\
 .AutoHeight()\
 .Padding(FMargin(30,5))\
@@ -16,11 +35,12 @@
 	.VAlign(VAlign_Top)\
 	[\
 		SNew(SEditableTextBox)\
+		.OnTextCommitted_Lambda(KEY_CHANGE_HANDLER_NUMERIC(paramStruct, paramName))\
 		.HintText(FText::FromString(#hint))\
 	]\
 ]
 
-#define ARGUMENT_CHECKBOX(paramName)\
+#define ARGUMENT_FIELD_STRING(paramStruct, paramName, hint)\
 + SVerticalBox::Slot()\
 .AutoHeight()\
 .Padding(FMargin(30,5))\
@@ -35,7 +55,28 @@
 	+ SHorizontalBox::Slot()\
 	.VAlign(VAlign_Top)\
 	[\
-		SNew(SCheckBox)\
+		SNew(SEditableTextBox)\
+		.OnTextCommitted_Lambda(KEY_CHANGE_HANDLER_STRING(paramStruct, paramName))\
+		.HintText(FText::FromString(#hint))\
+	]\
+]
+
+#define ARGUMENT_CHECKBOX(paramStruct, paramName)\
++ SVerticalBox::Slot()\
+.AutoHeight()\
+.Padding(FMargin(30,5))\
+[\
+	SNew(SHorizontalBox)\
+	+ SHorizontalBox::Slot()\
+	.VAlign(VAlign_Top)\
+	[\
+		SNew(STextBlock)\
+		.Text(FText::FromString(#paramName))\
+	]\
+	+ SHorizontalBox::Slot()\
+	.VAlign(VAlign_Top)\
+	[\
+		SNew(SCheckBox).OnCheckStateChanged_Lambda(KEY_CHANGE_HANDLER_BOOL(paramStruct, paramName))\
 	]\
 ]
 
