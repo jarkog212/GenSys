@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
-#include "DataTypes.h"
-
 
 class FToolBarBuilder;
 class FMenuBuilder;
@@ -29,12 +27,10 @@ private:
 	void CallRunGensysFromEngine();
 	void ExportParamsIntoJson(const FString& path = "");
 
-
 	TSharedRef<class SDockTab> OnSpawnPluginTab(const class FSpawnTabArgs& SpawnTabArgs);
 
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;
-	GensysParameters Params;
 
 	// Gensys files constants
 	const FString PluginsRelativePath = "GenSys/Binaries/GenSysCoreShell";

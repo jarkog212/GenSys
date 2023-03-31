@@ -19,4 +19,4 @@ struct GensysParameters
 	std::string User_TerrainOutlineMap = "";
 	std::string User_TerrainFeatureMap = "";
 	std::string User_RiverOutline = "";
-};
+} UserParams;

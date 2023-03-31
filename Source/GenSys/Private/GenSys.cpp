@@ -10,6 +10,8 @@
 #include "ToolMenus.h"
 #include "Interfaces/IPluginManager.h"
 #include "Windows/WindowsSystemIncludes.h"
+#include "DataTypes.h"
+#include "SlateMacroLibrary.h"
 
 #include <fstream>
 
@@ -63,30 +65,32 @@ void FGenSysModule::ShutdownModule()
 
 TSharedRef<SDockTab> FGenSysModule::OnSpawnPluginTab(const FSpawnTabArgs& SpawnTabArgs)
 {
-	FText WidgetText = FText::Format(
-		LOCTEXT("WindowWidgetText", "Add code to {0} in {1} to override this window's contents"),
-		FText::FromString(FPaths::EnginePluginsDir()),
-		FText::FromString(TEXT("GenSys.cpp"))
-		);
-
-	FText Widget2Text = FText::Format(
-		LOCTEXT("WindowWidgetText", "seconf"),
-		FText::FromString(TEXT("FGenSysModule::OnSpawnPluginTab")),
-		FText::FromString(TEXT("GenSys.cpp"))
-	);
-
 	return SNew(SDockTab)
-		.TabRole(ETabRole::NomadTab)
-		[
-			// Put your tab content here!
-			SNew(SBox)
-			.HAlign(HAlign_Left)
-			.VAlign(VAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(WidgetText)
-			]
-		];
+	.TabRole(ETabRole::NomadTab)
+	[
+		SNew(SVerticalBox).RenderTransform(FSlateRenderTransform(7.0f))
+		SECTION_TITLE(Noise)
+		ARGUMENT_FIELD(ValueNoiseOctaves, "integer 0-5")
+		ARGUMENT_FIELD(BlurPixelRadius, "integer 0-5")
+		ARGUMENT_FIELD(Granularity, "float 0-1")
+		SECTION_TITLE(Terrain)
+		ARGUMENT_FIELD(User_TerrainOutlineMap, "string full path (512x512)")
+		ARGUMENT_FIELD(User_TerrainFeatureMap, "string full path (512x512)")
+		SECTION_TITLE(River / Erosion)
+		ARGUMENT_FIELD(RiverGenerationIterations, "--unused--")
+		ARGUMENT_FIELD(RiverResolution, "float 0-1 (technically 0.90 - 1)")
+		ARGUMENT_FIELD(RiverThickness, "integer 0-inf")
+		ARGUMENT_FIELD(RiverStrengthFactor, "float 0-1")
+		ARGUMENT_CHECKBOX(RiverAllowNodeMismatch)
+		ARGUMENT_CHECKBOX(RiversOnGivenFeatures)
+		ARGUMENT_FIELD(User_RiverOutline, "string full path (512x512)")
+		SECTION_TITLE(Layers)
+		ARGUMENT_FIELD(NumberOfTerrainLayers, "integer 1-4")
+		SECTION_TITLE(Foliage)
+		ARGUMENT_FIELD(NumberOfFoliageLayers, "integer 1-4")
+		ARGUMENT_FIELD(FoliageWholeness, "float 0-1")
+		ARGUMENT_FIELD(MinUnitFoliageHeight, "float 0-1")
+	];
 }
 
 void FGenSysModule::PluginButtonClicked()
@@ -157,26 +161,27 @@ void FGenSysModule::CallRunGensysFromEngine()
 #define PARSE_TO_JSON(input, dest, value) \
 	dest.emplace(#value, input.value);
 
+extern GensysParameters UserParams;
 void FGenSysModule::ExportParamsIntoJson(const FString& path)
 {
 	json FileOut;
 
-	PARSE_TO_JSON(Params, FileOut, ValueNoiseOctaves)
-	PARSE_TO_JSON(Params, FileOut, BlurPixelRadius)
-	PARSE_TO_JSON(Params, FileOut, Granularity)
-	PARSE_TO_JSON(Params, FileOut, RiverGenerationIterations)
-	PARSE_TO_JSON(Params, FileOut, RiverResolution)
-	PARSE_TO_JSON(Params, FileOut, RiverThickness)
-	PARSE_TO_JSON(Params, FileOut, RiverAllowNodeMismatch)
-	PARSE_TO_JSON(Params, FileOut, RiversOnGivenFeatures)
-	PARSE_TO_JSON(Params, FileOut, RiverStrengthFactor)
-	PARSE_TO_JSON(Params, FileOut, NumberOfTerrainLayers)
-	PARSE_TO_JSON(Params, FileOut, NumberOfFoliageLayers)
-	PARSE_TO_JSON(Params, FileOut, FoliageWholeness)
-	PARSE_TO_JSON(Params, FileOut, MinUnitFoliageHeight)
-	PARSE_TO_JSON(Params, FileOut, User_TerrainOutlineMap)
-	PARSE_TO_JSON(Params, FileOut, User_TerrainFeatureMap)
-	PARSE_TO_JSON(Params, FileOut, User_RiverOutline)
+	PARSE_TO_JSON(UserParams, FileOut, ValueNoiseOctaves)
+	PARSE_TO_JSON(UserParams, FileOut, BlurPixelRadius)
+	PARSE_TO_JSON(UserParams, FileOut, Granularity)
+	PARSE_TO_JSON(UserParams, FileOut, RiverGenerationIterations)
+	PARSE_TO_JSON(UserParams, FileOut, RiverResolution)
+	PARSE_TO_JSON(UserParams, FileOut, RiverThickness)
+	PARSE_TO_JSON(UserParams, FileOut, RiverAllowNodeMismatch)
+	PARSE_TO_JSON(UserParams, FileOut, RiversOnGivenFeatures)
+	PARSE_TO_JSON(UserParams, FileOut, RiverStrengthFactor)
+	PARSE_TO_JSON(UserParams, FileOut, NumberOfTerrainLayers)
+	PARSE_TO_JSON(UserParams, FileOut, NumberOfFoliageLayers)
+	PARSE_TO_JSON(UserParams, FileOut, FoliageWholeness)
+	PARSE_TO_JSON(UserParams, FileOut, MinUnitFoliageHeight)
+	PARSE_TO_JSON(UserParams, FileOut, User_TerrainOutlineMap)
+	PARSE_TO_JSON(UserParams, FileOut, User_TerrainFeatureMap)
+	PARSE_TO_JSON(UserParams, FileOut, User_RiverOutline)
 
 	FString StoragePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath);
 	StoragePath.Append("/input.json");
