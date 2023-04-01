@@ -71,7 +71,7 @@
 	.VAlign(VAlign_Top)\
 	[\
 		SNew(STextBlock)\
-		.Text(FText::FromString(#paramName))\
+		.Text(FText::FromString(#title))\
 	]\
 	+ SHorizontalBox::Slot()\
 	.VAlign(VAlign_Top)\

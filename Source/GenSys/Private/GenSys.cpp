@@ -8,11 +8,12 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "ToolMenus.h"
-#include "SDefaultParamList.h"
 #include "Interfaces/IPluginManager.h"
 #include "Windows/WindowsSystemIncludes.h"
 #include "DataTypes.h"
 #include "SlateMacroLibrary.h"
+#include "AssetImportTask.h"
+#include "AssetToolsModule.h"
 
 #include <fstream>
 
@@ -46,6 +47,9 @@ void FGenSysModule::StartupModule()
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(GenSysTabName, FOnSpawnTab::CreateRaw(this, &FGenSysModule::OnSpawnPluginTab))
 		.SetDisplayName(LOCTEXT("FGenSysTabTitle", "GenSys"))
 		.SetMenuType(ETabSpawnerMenuType::Hidden);
+
+	SetupGensysContentFolder();
+	MoveContentData();
 }
 
 void FGenSysModule::ShutdownModule()
@@ -84,7 +88,7 @@ TSharedRef<SDockTab> FGenSysModule::OnSpawnPluginTab(const FSpawnTabArgs& SpawnT
 		ARGUMENT_FIELD_NUMERIC(UserParams, River Line Average Thickness, RiverThickness, "integer 0-inf")
 		ARGUMENT_FIELD_NUMERIC(UserParams, River Erosion Strength, RiverStrengthFactor, "float 0-1")
 		ARGUMENT_CHECKBOX(UserParams,  Allow Multiple Node Connections, RiverAllowNodeMismatch)
-		ARGUMENT_CHECKBOX(UserParams, Allow Rivers To Erode Forced Level,RiversOnGivenFeatures)
+		ARGUMENT_CHECKBOX(UserParams, Allow Rivers To Erode Forced Level, RiversOnGivenFeatures)
 		ARGUMENT_FIELD_STRING(UserParams, River Guide Texture Path, User_RiverOutline, "string full path (512x512)")
 		SECTION_TITLE(Layers)
 		ARGUMENT_FIELD_NUMERIC(UserParams, Number Of Terrain Layers, NumberOfTerrainLayers, "integer 1-4")
@@ -123,7 +127,7 @@ FReply FGenSysModule::RunGensys()
 	ExportParamsIntoJson();
 	CallRunGensysFromEngine();
 	CallRunGensysFromProject();
-
+	ImportGensysOutput();
 	return FReply::Handled();
 }
 
@@ -207,11 +211,78 @@ void FGenSysModule::ExportParamsIntoJson(const FString& path)
 	PARSE_TO_JSON(UserParams, FileOut, User_RiverOutline)
 
 	FString StoragePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath);
-	StoragePath.Append("/input.json");
+	StoragePath.Append("input.json");
 
 	// save json
 	std::ofstream File(TCHAR_TO_ANSI(*StoragePath));
 	File << FileOut;
+}
+
+void FGenSysModule::SetupGensysContentFolder()
+{
+	const FString ProjectFolderAbs = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectContentDir());
+
+	// using system command to copy create the desired folder structure if it does not exist
+	FString command = "cd " + ProjectFolderAbs + " && ";
+	command.Append("mkdir Gensys && cd Gensys && mkdir MaterialFunctions");
+
+	system(TCHAR_TO_ANSI(*command));
+}
+
+void FGenSysModule::MoveContentData()
+{
+	static const FString RelativeMaterialFunctionsFolder = "GenSys/Content/GensysMaterialFunctions";
+	static const FString ProjectMaterialFunctions = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(RelativeMaterialFunctionsFolder);
+	static const FString EngineMaterialFunctions = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(RelativeMaterialFunctionsFolder);;
+	static const FString Destination = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectContentDir()).Append("Gensys/MaterialFunctions");
+
+	// using system command to copy .uasset files from material function folder
+	FString command = "xcopy /s \"";
+	command.Append(ProjectMaterialFunctions);
+	command.Append("\" \"");
+	command.Append(Destination);
+	command.Append("\"");
+
+	system(TCHAR_TO_ANSI(*command));
+}
+
+void FGenSysModule::ImportGensysOutput()
+{
+	static const FString ProjectOutputs = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath);
+	static const FString EngineOutputs = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(PluginsRelativePath);
+
+	// list of textures to import from the output folder
+	ImportFile(ProjectOutputs + "FoliageMap.png", "", "FoliageMap");
+	ImportFile(ProjectOutputs + "RiverErosionMap.png", "", "RiverErosionMap");
+	ImportFile(ProjectOutputs + "TerrainLayersMap.png", "", "TerrainLayersMap");
+	ImportFile(ProjectOutputs + "TerrainMap.png", "", "TerrainMap");
+}
+
+void FGenSysModule::ImportFile(const FString& In, const FString& RelativeDest, const FString& Filename)
+{
+	const FString GensysImportDest = "/Game/Gensys/" + RelativeDest + Filename;
+	UAssetImportTask* importRequest = NewObject<UAssetImportTask>();
+
+	if (importRequest == nullptr)
+		return;
+
+	// specify the import rules
+	importRequest->Filename = In;
+	importRequest->DestinationPath = FPaths::GetPath(GensysImportDest);
+	importRequest->DestinationName = FPaths::GetCleanFilename(GensysImportDest);
+	importRequest->bSave = true;
+	importRequest->bAutomated = true;
+	importRequest->bReplaceExisting = true;
+	importRequest->bReplaceExistingSettings = false;
+
+	// load the engine module responsible for assets handling
+	FAssetToolsModule* AssetTools = FModuleManager::LoadModulePtr<FAssetToolsModule>("AssetTools");
+
+	if (AssetTools == nullptr)
+		return;
+
+	// add the task for engine to execute
+	AssetTools->Get().ImportAssetTasks({ importRequest });
 }
 
 #undef LOCTEXT_NAMESPACE

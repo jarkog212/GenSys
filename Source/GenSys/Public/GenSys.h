@@ -24,17 +24,20 @@ private:
 
 	void RegisterMenus();
 
-
-	void CallRunGensysFromProject();
-	void CallRunGensysFromEngine();
-	void ExportParamsIntoJson(const FString& path = "");
-
 	TSharedRef<class SDockTab> OnSpawnPluginTab(const class FSpawnTabArgs& SpawnTabArgs);
 
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;
 
 	// Gensys files constants
-	const FString PluginsRelativePath = "GenSys/Binaries/GenSysCoreShell";
+	const FString PluginsRelativePath = "GenSys/Resources/GenSysCoreShell/";
 	const FString ExecutableName = "CoreTester.exe";
+
+	void CallRunGensysFromProject();
+	void CallRunGensysFromEngine();
+	void ExportParamsIntoJson(const FString& Path = "");
+	void ImportFile(const FString& In, const FString& RelativeDest, const FString& Filename);
+	void SetupGensysContentFolder();
+	void MoveContentData();
+	void ImportGensysOutput();
 };
