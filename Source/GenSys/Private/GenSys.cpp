@@ -223,8 +223,10 @@ void FGenSysModule::SetupGensysContentFolder()
 	const FString ProjectFolderAbs = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectContentDir());
 
 	// using system command to copy create the desired folder structure if it does not exist
-	FString command = "cd " + ProjectFolderAbs + " && ";
-	command.Append("mkdir Gensys && cd Gensys && mkdir MaterialFunctions");
+	FString command = "cd " + ProjectFolderAbs + " && " + 
+		"mkdir Gensys && cd Gensys && mkdir MaterialFunctions && " +
+		"cd " + ProjectFolderAbs + " && cd Gensys && " +
+		"mkdir Materials";
 
 	system(TCHAR_TO_ANSI(*command));
 }
@@ -237,10 +239,24 @@ void FGenSysModule::MoveContentData()
 	static const FString Destination = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectContentDir()).Append("Gensys/MaterialFunctions");
 
 	// using system command to copy .uasset files from material function folder
-	FString command = "xcopy /s \"";
+	FString command = "xcopy /S /Y \"";
 	command.Append(ProjectMaterialFunctions);
 	command.Append("\" \"");
 	command.Append(Destination);
+	command.Append("\"");
+
+	system(TCHAR_TO_ANSI(*command));
+
+	static const FString RelativeMaterialsFolder = "GenSys/Content/GensysMaterials";
+	static const FString ProjectMaterial = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(RelativeMaterialsFolder);
+	static const FString EngineMaterial = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(RelativeMaterialsFolder);
+	static const FString MaterialDestination = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectContentDir()).Append("Gensys/Materials");
+
+	// using system command to copy .uasset files from material folder
+	command = "xcopy /S /Y \"";
+	command.Append(ProjectMaterial);
+	command.Append("\" \"");
+	command.Append(MaterialDestination);
 	command.Append("\"");
 
 	system(TCHAR_TO_ANSI(*command));
