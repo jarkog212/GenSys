@@ -125,8 +125,7 @@ void FGenSysModule::PluginButtonClicked()
 FReply FGenSysModule::RunGensys()
 {
 	ExportParamsIntoJson();
-	CallRunGensysFromEngine();
-	CallRunGensysFromProject();
+	RunGensysShell();
 	ImportGensysOutput();
 	return FReply::Handled();
 }
@@ -156,29 +155,18 @@ void FGenSysModule::RegisterMenus()
 	}
 }
 
-void FGenSysModule::CallRunGensysFromProject()
+void FGenSysModule::RunGensysShell()
 {
-	// Determine paths to the core exe
-	const FString GensysPathProjectPlugins = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath);
+	static const FString ProjectExePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath + ExecutableName);
+	static const bool IsInProjectFolder = FPaths::FileExists(ProjectExePath);
 
+	static const FString GensysPathProjectPlugins = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath);
+	static const FString GensysPathEnginePlugins = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(PluginsRelativePath);
+
+	static const FString ExePath = IsInProjectFolder ? GensysPathProjectPlugins : GensysPathEnginePlugins;
 	// Append strings into a single command
 	FString command = "cd ";
-	command.Append(GensysPathProjectPlugins);
-	command.Append(" && ");
-	command.Append(ExecutableName);
-
-	// Have Windows system run the Gensys core process
-	system(TCHAR_TO_ANSI(*command));
-}
-
-void FGenSysModule::CallRunGensysFromEngine()
-{
-	// Determine paths to the core exe
-	const FString GensysPathEnginePlugins = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(PluginsRelativePath);
-
-	// Append strings into a single command
-	FString command = "cd ";
-	command.Append(GensysPathEnginePlugins);
+	command.Append(ExePath);
 	command.Append(" && ");
 	command.Append(ExecutableName);
 
@@ -211,6 +199,9 @@ void FGenSysModule::ExportParamsIntoJson(const FString& path)
 	PARSE_TO_JSON(UserParams, FileOut, User_RiverOutline)
 
 	FString StoragePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath);
+	if (FPaths::FileExists(StoragePath + ExecutableName))
+		StoragePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(PluginsRelativePath);
+
 	StoragePath.Append("input.json");
 
 	// save json
@@ -223,38 +214,49 @@ void FGenSysModule::SetupGensysContentFolder()
 	const FString ProjectFolderAbs = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectContentDir());
 
 	// using system command to copy create the desired folder structure if it does not exist
-	FString command = "cd " + ProjectFolderAbs + " && " + 
-		"mkdir Gensys && cd Gensys && mkdir MaterialFunctions && " +
-		"cd " + ProjectFolderAbs + " && cd Gensys && " +
-		"mkdir Materials";
+	FString command = "cd " + ProjectFolderAbs + " && " + "mkdir Gensys";
+	command.Append(" && cd Gensys && mkdir MaterialFunctions");
+	command.Append(" && cd " + ProjectFolderAbs);
+	command.Append(" && cd Gensys && mkdir Materials");
 
 	system(TCHAR_TO_ANSI(*command));
 }
 
 void FGenSysModule::MoveContentData()
 {
-	static const FString RelativeMaterialFunctionsFolder = "GenSys/Content/GensysMaterialFunctions";
-	static const FString ProjectMaterialFunctions = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(RelativeMaterialFunctionsFolder);
-	static const FString EngineMaterialFunctions = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(RelativeMaterialFunctionsFolder);;
-	static const FString Destination = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectContentDir()).Append("Gensys/MaterialFunctions");
+	const FString ProjectExePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath + ExecutableName);
+	const bool IsInProjectFolder = FPaths::FileExists(ProjectExePath);
 
-	// using system command to copy .uasset files from material function folder
+	const FString RelativeMaterialFunctionsFolder = "GenSys/Content/GensysMaterialFunctions";
+	const FString ProjectMaterialFunctions = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(RelativeMaterialFunctionsFolder);
+	const FString EngineMaterialFunctions = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(RelativeMaterialFunctionsFolder);;
+	const FString Destination = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectContentDir()).Append("Gensys/MaterialFunctions");
+
+	// using system command to copy .uasset files from Engine/Project material function folder (if available)
 	FString command = "xcopy /S /Y \"";
-	command.Append(ProjectMaterialFunctions);
+	if (IsInProjectFolder)
+		command.Append(ProjectMaterialFunctions);
+	else
+		command.Append(EngineMaterialFunctions);
+
 	command.Append("\" \"");
 	command.Append(Destination);
 	command.Append("\"");
 
 	system(TCHAR_TO_ANSI(*command));
 
-	static const FString RelativeMaterialsFolder = "GenSys/Content/GensysMaterials";
-	static const FString ProjectMaterial = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(RelativeMaterialsFolder);
-	static const FString EngineMaterial = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(RelativeMaterialsFolder);
-	static const FString MaterialDestination = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectContentDir()).Append("Gensys/Materials");
+	const FString RelativeMaterialsFolder = "GenSys/Content/GensysMaterials";
+	const FString ProjectMaterial = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(RelativeMaterialsFolder);
+	const FString EngineMaterial = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(RelativeMaterialsFolder);
+	const FString MaterialDestination = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectContentDir()).Append("Gensys/Materials");
 
-	// using system command to copy .uasset files from material folder
+	// using system command to copy .uasset files from Engine material folder (if available)
 	command = "xcopy /S /Y \"";
-	command.Append(ProjectMaterial);
+	if (IsInProjectFolder)
+		command.Append(ProjectMaterial);
+	else
+		command.Append(EngineMaterial);
+
 	command.Append("\" \"");
 	command.Append(MaterialDestination);
 	command.Append("\"");
@@ -264,14 +266,18 @@ void FGenSysModule::MoveContentData()
 
 void FGenSysModule::ImportGensysOutput()
 {
+	static const FString ProjectExePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath + ExecutableName);
+	static const bool IsInProjectFolder = FPaths::FileExists(ProjectExePath);
+
 	static const FString ProjectOutputs = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath);
 	static const FString EngineOutputs = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(PluginsRelativePath);
+	static const FString InputFolder = IsInProjectFolder ? ProjectOutputs : EngineOutputs;
 
-	// list of textures to import from the output folder
-	ImportFile(ProjectOutputs + "FoliageMap.png", "", "FoliageMap");
-	ImportFile(ProjectOutputs + "RiverErosionMap.png", "", "RiverErosionMap");
-	ImportFile(ProjectOutputs + "TerrainLayersMap.png", "", "TerrainLayersMap");
-	ImportFile(ProjectOutputs + "TerrainMap.png", "", "TerrainMap");
+	// list of textures to import from the engine output folder (if available)
+	ImportFile(InputFolder + "FoliageMap.png", "", "FoliageMap");
+	ImportFile(InputFolder + "RiverErosionMap.png", "", "RiverErosionMap");
+	ImportFile(InputFolder + "TerrainLayersMap.png", "", "TerrainLayersMap");
+	ImportFile(InputFolder + "TerrainMap.png", "", "TerrainMap");
 }
 
 void FGenSysModule::ImportFile(const FString& In, const FString& RelativeDest, const FString& Filename)

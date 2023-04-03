@@ -33,8 +33,7 @@ private:
 	const FString PluginsRelativePath = "GenSys/Resources/GenSysCoreShell/";
 	const FString ExecutableName = "CoreTester.exe";
 
-	void CallRunGensysFromProject();
-	void CallRunGensysFromEngine();
+	void RunGensysShell();
 	void ExportParamsIntoJson(const FString& Path = "");
 	void ImportFile(const FString& In, const FString& RelativeDest, const FString& Filename);
 	void SetupGensysContentFolder();
