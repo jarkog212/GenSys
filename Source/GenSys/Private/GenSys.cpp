@@ -83,18 +83,18 @@ TSharedRef<SDockTab> FGenSysModule::OnSpawnPluginTab(const FSpawnTabArgs& SpawnT
 		ARGUMENT_FIELD_STRING(UserParams, Outline Texture Path, User_TerrainOutlineMap, "string full path (512x512)")
 		ARGUMENT_FIELD_STRING(UserParams, Forced Level Texture Path ,User_TerrainFeatureMap, "string full path (512x512)")
 		SECTION_TITLE(River / Erosion)
-		ARGUMENT_FIELD_NUMERIC(UserParams,  River Iterations, RiverGenerationIterations, "--unused--")
-		ARGUMENT_FIELD_NUMERIC(UserParams,  River Resolution, RiverResolution, "float 0-1 (technically 0.90 - 1)")
+		ARGUMENT_FIELD_NUMERIC(UserParams, River Iterations, RiverGenerationIterations, "--unused--")
+		ARGUMENT_FIELD_NUMERIC(UserParams, River Resolution, RiverResolution, "float 0-1 (technically 0.90 - 1)")
 		ARGUMENT_FIELD_NUMERIC(UserParams, River Line Average Thickness, RiverThickness, "integer 0-inf")
 		ARGUMENT_FIELD_NUMERIC(UserParams, River Erosion Strength, RiverStrengthFactor, "float 0-1")
-		ARGUMENT_CHECKBOX(UserParams,  Allow Multiple Node Connections, RiverAllowNodeMismatch)
+		ARGUMENT_CHECKBOX(UserParams, Allow Multiple Node Connections, RiverAllowNodeMismatch)
 		ARGUMENT_CHECKBOX(UserParams, Allow Rivers To Erode Forced Level, RiversOnGivenFeatures)
 		ARGUMENT_FIELD_STRING(UserParams, River Guide Texture Path, User_RiverOutline, "string full path (512x512)")
 		SECTION_TITLE(Layers)
 		ARGUMENT_FIELD_NUMERIC(UserParams, Number Of Terrain Layers, NumberOfTerrainLayers, "integer 1-4")
 		SECTION_TITLE(Foliage)
 		ARGUMENT_FIELD_NUMERIC(UserParams, Number Of Foliage Layers, NumberOfFoliageLayers, "integer 1-4")
-		ARGUMENT_FIELD_NUMERIC(UserParams,  Foliage Emptyness, FoliageWholeness, "float 0-1")
+		ARGUMENT_FIELD_NUMERIC(UserParams, Foliage Emptyness, FoliageWholeness, "float 0-1")
 		ARGUMENT_FIELD_NUMERIC(UserParams, Minimum Height For Foliage (unit), MinUnitFoliageHeight, "float 0-1")
 		+ SVerticalBox::Slot()
 		.AutoHeight()
@@ -199,7 +199,7 @@ void FGenSysModule::ExportParamsIntoJson(const FString& path)
 	PARSE_TO_JSON(UserParams, FileOut, User_RiverOutline)
 
 	FString StoragePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::ProjectPluginsDir()).Append(PluginsRelativePath);
-	if (FPaths::FileExists(StoragePath + ExecutableName))
+	if (!FPaths::FileExists(StoragePath + ExecutableName))
 		StoragePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(PluginsRelativePath);
 
 	StoragePath.Append("input.json");
