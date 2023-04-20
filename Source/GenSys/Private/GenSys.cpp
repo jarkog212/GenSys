@@ -276,6 +276,14 @@ void FGenSysModule::ImportGensysOutput()
 	static const FString EngineOutputs = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::EnginePluginsDir()).Append(PluginsRelativePath);
 	static const FString InputFolder = IsInProjectFolder ? ProjectOutputs : EngineOutputs;
 
+	// The out put files to consider for removal 
+	static const TArray<FString> OutputFiles = {
+		"FoliageMap",
+		"RiverErosionMap",
+		"TerrainLayersMap",
+		"TerrainMap"
+	};
+
 	const FString Destination = ProjectContentPath + "Gensys/" + UserParams.Identifier.data();
 
 	// make the relevant landscape folder in content
@@ -283,38 +291,37 @@ void FGenSysModule::ImportGensysOutput()
 	command.Append("cd " + ProjectContentPath + "Gensys && mkdir " + UserParams.Identifier.data());
 
 	// Fix paths to use backslashes
-	for(auto &it : command)
+	for(auto &character : command)
 	{
-		if (it == '/')
-			it = '\\';
+		if (character == '/')
+			character = '\\';
 	}
 
 	system(TCHAR_TO_ANSI(*command));
 
-	// copy the ouputfiles into the relevant content folder
+	// copy the output files into the relevant content folder
 	command = "";
-	command.Append("xcopy ,Y \"" + InputFolder + "FoliageMap.png*" + "\" \"" + Destination + "\\FoliageMap.png* \" && ");
-	command.Append("xcopy ,Y \"" + InputFolder + "RiverErosionMap.png*" + "\" \"" + Destination + "\\RiverErosionMap.png* \" && ");
-	command.Append("xcopy ,Y \"" + InputFolder + "TerrainLayersMap.png*" + "\" \"" + Destination + "\\TerrainLayersMap.png* \" && ");
-	command.Append("xcopy ,Y \"" + InputFolder + "TerrainMap.png*" + "\" \"" + Destination + "\\TerrainMap.png* \"");
+	for(auto& fileName : OutputFiles)
+		command.Append("xcopy ,Y \"" + InputFolder + fileName + ".png*" + "\" \"" + Destination + "\\" + fileName + ".png*\" && ");
+
+	command.RemoveFromEnd("&& ");
 
 	// Fix paths to use backslashes and replace , with forward slashes
-	for (auto& it : command)
+	// Needed by Windows XCOPY command
+	for (auto& character : command)
 	{
-		if (it == '/')
-			it = '\\';
+		if (character == '/')
+			character = '\\';
 
-		if (it == ',')
-			it = '/';
+		if (character == ',')
+			character = '/';
 	}
 
 	system(TCHAR_TO_ANSI(*command));
 
 	// list of textures to import from the engine output folder (if available)
-	ImportFile(Destination + "/FoliageMap.png", FString(UserParams.Identifier.data()) + "/", "FoliageMap");
-	ImportFile(Destination + "/RiverErosionMap.png", FString(UserParams.Identifier.data()) + "/", "RiverErosionMap");
-	ImportFile(Destination + "/TerrainLayersMap.png", FString(UserParams.Identifier.data()) + "/", "TerrainLayersMap");
-	ImportFile(Destination + "/TerrainMap.png", FString(UserParams.Identifier.data()) + "/", "TerrainMap");
+	for (auto& fileName : OutputFiles)
+		ImportFile(Destination + "/" + fileName + ".png", FString(UserParams.Identifier.data()) + "/", fileName);
 }
 
 void FGenSysModule::ImportFile(const FString& In, const FString& RelativeDest, const FString& Filename)
